@@ -224,18 +224,18 @@ async function analyzeVideoFrame(base64, frameContext = {}) {
         ? `
 TRACKED SEAT MAP
 
-Use exactly these anonymous seat ids so tracking stays stable between frames:
+Keep these anonymous seat ids attached to the same physical seats between frames:
 
 ${expectedSeats
     .map((seat) => `- ${seat.id}: previous frame x=${seat.x}, y=${seat.y}; classroom map x=${seat.mapX}, y=${seat.mapY}`)
     .join("\n")}
 
-Return one object for every tracked seat, including empty seats. Keep each id attached to the same physical seat. Re-detect x and y on this current frame so the marker remains on the visible student or seat; do not blindly repeat a previous frame coordinate. Keep mapX and mapY stable unless the first estimate was clearly wrong. Do not rename, add, or remove tracked seats.
+Treat the tracked list as the minimum known layout, not the maximum seat count. Return one object for every tracked seat, including empty seats, then add an object for every newly visible student or seat that is not already tracked. Give new seats the next unused T-number. Keep each existing id attached to the same physical seat. Re-detect x and y on this current frame so the marker remains on the visible student or seat; do not blindly repeat a previous frame coordinate. Keep mapX and mapY stable unless the first estimate was clearly wrong. Never remove or rename a tracked seat.
 `
         : `
 INITIAL SEAT MAPPING
 
-Detect every visible student and every visible physical student seat, chair, desk position, or bench position.
+Detect every visible student and every visible physical student seat, chair, desk position, or bench position. The first frame is only the start of the map; later frames may add seats that become clearer.
 Assign stable anonymous ids in reading order as T1, T2, T3, and so on.
 For an occupied seat, place x and y at the center of the visible student's head/upper torso, not on the desk, wall, or background. For an empty seat, place x and y at the center of the visible chair or sitting position.
 Also infer a top-down classroom layout and return mapX and mapY from 0.0 to 1.0, where mapX runs left to right and mapY runs from the front/teaching wall to the back of the room.
@@ -251,6 +251,8 @@ Selected classroom layout: ${classroomId || "auto-detect"}
 ${seatHint}
 
 Analyze only visible, observable classroom behavior. Never identify a student, infer identity or demographics, recognize faces, or infer emotions. Use anonymous seat ids only. Attention estimates must be based on observable cues such as head direction, posture, visible gaze direction, note-taking, and participation.
+
+Before returning JSON, do a strict detection pass: count visible student bodies first, including small background students and partially occluded students; scan left-to-right across the front, middle, and back of the room; then verify that every counted student has a corresponding occupied seat object with a valid personBox and x/y anchor. Do not stop after detecting only the largest foreground students. After that, add clearly visible empty seats.
 
 For every seat return:
 
@@ -276,7 +278,7 @@ Also return:
 - classroomScore from 0 to 100 representing current whole-class attention among occupied seats
 - exactly three concise recommendations based on this frame
 - occupancySummary with totalSeats, occupiedSeats, emptySeats, attentiveSeats, lowAttentionSeats, and notAttentiveSeats
-- seatDetectionAudit with visibleSeatCount, detectedSeatIds, doubleCheckPassed, and auditNote
+- seatDetectionAudit with visibleStudentCount, visibleSeatCount, returnedSeatCount, detectedSeatIds, doubleCheckPassed, and auditNote
 
 Return only valid JSON without markdown.
 `;
