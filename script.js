@@ -186,6 +186,7 @@ let latestLiveData = null;
 let analyzedFrames = [];
 const seatTrends = new Map();
 const VIDEO_ANALYSIS_INTERVAL = 7000;
+const VIDEO_SEAT_DISCOVERY_DISTANCE = 0.035;
 
 window.addEventListener("load", () => {
     updateDate();
@@ -563,7 +564,7 @@ async function analyzeCurrentVideoFrame({ initial = false } = {}) {
 function captureVideoFrame() {
     const sourceWidth = classVideo.videoWidth;
     const sourceHeight = classVideo.videoHeight;
-    const maxWidth = 1120;
+    const maxWidth = 1600;
     const scale = Math.min(1, maxWidth / sourceWidth);
     const targetWidth = Math.max(1, Math.round(sourceWidth * scale));
     const targetHeight = Math.max(1, Math.round(sourceHeight * scale));
@@ -573,7 +574,7 @@ function captureVideoFrame() {
     frameCanvas.height = targetHeight;
     context.drawImage(classVideo, 0, 0, targetWidth, targetHeight);
 
-    const dataUrl = frameCanvas.toDataURL("image/jpeg", 0.84);
+    const dataUrl = frameCanvas.toDataURL("image/jpeg", 0.9);
     const previewCanvas = document.createElement("canvas");
     const previewWidth = Math.min(320, targetWidth);
     const previewScale = previewWidth / targetWidth;
@@ -598,7 +599,7 @@ function saveAnalyzedFrame(timestamp, preview, data) {
     const previousFrame = existingIndex >= 0 ? analyzedFrames[existingIndex] : null;
     const frame = {
         id: previousFrame?.id || `frame-${analysisFrameCount}`,
-        number: previousFrame?.number || analysisFrameCount,
+        number: previousFrame?.number || 0,
         timestamp,
         preview,
         data: cloneAnalysisData(data)
@@ -608,14 +609,19 @@ function saveAnalyzedFrame(timestamp, preview, data) {
         analyzedFrames.splice(existingIndex, 1, frame);
     } else {
         analyzedFrames.push(frame);
-        analyzedFrames.sort((a, b) => a.timestamp - b.timestamp);
     }
+
+    analyzedFrames.sort((a, b) => a.timestamp - b.timestamp);
+    analyzedFrames.forEach((savedFrame, index) => {
+        savedFrame.number = index + 1;
+    });
 
     renderAnalyzedFrames();
 }
 
 function renderAnalyzedFrames() {
     framesTabCount.textContent = String(analyzedFrames.length);
+    frameMetric.textContent = String(analyzedFrames.length);
     framesInfo.innerHTML = "";
 
     if (!analyzedFrames.length) {
@@ -931,9 +937,7 @@ function mapVideoSeats(aiSeats) {
     const previousSeats = Array.isArray(window.latestData?.seats) ? window.latestData.seats : [];
 
     if (!videoSeatLayout.length) {
-        const detectedSeats = aiSeats
-            .map((seat, index) => normalizeVideoSeat(seat, index))
-            .filter(hasVideoAnchor);
+        const detectedSeats = discoverVideoSeats(aiSeats);
 
         videoSeatLayout = detectedSeats.map((seat) => ({
             id: seat.id,
@@ -951,11 +955,16 @@ function mapVideoSeats(aiSeats) {
             .map((seat) => [String(seat.id).trim().toLowerCase(), seat])
     );
     const previousById = new Map(previousSeats.map((seat) => [String(seat.id).toLowerCase(), seat]));
+    const consumedAiIds = new Set();
 
     const trackedSeats = videoSeatLayout.map((mappedSeat, index) => {
         const key = mappedSeat.id.toLowerCase();
         const previousSeat = previousById.get(key) || {};
         const aiSeat = aiSeatsById.get(key) || {};
+
+        if (aiSeatsById.has(key)) {
+            consumedAiIds.add(key);
+        }
 
         return normalizeVideoSeat({
             ...previousSeat,
@@ -967,7 +976,10 @@ function mapVideoSeats(aiSeats) {
         });
     });
 
-    videoSeatLayout = trackedSeats.map((seat) => ({
+    const discoveredSeats = discoverVideoSeats(aiSeats, trackedSeats, consumedAiIds);
+    const allSeats = [...trackedSeats, ...discoveredSeats];
+
+    videoSeatLayout = allSeats.map((seat) => ({
         id: seat.id,
         x: seat.x,
         y: seat.y,
@@ -975,7 +987,80 @@ function mapVideoSeats(aiSeats) {
         mapY: seat.mapY
     }));
 
-    return trackedSeats;
+    return allSeats;
+}
+
+function discoverVideoSeats(aiSeats, existingSeats = [], consumedIds = new Set()) {
+    const discoveredSeats = [];
+    const usedIds = new Set(
+        existingSeats.map((seat) => String(seat.id || "").trim().toLowerCase())
+    );
+
+    aiSeats.forEach((seat, index) => {
+        if (!seat || typeof seat !== "object") {
+            return;
+        }
+
+        const sourceId = String(seat.id || "").trim();
+        const sourceKey = sourceId.toLowerCase();
+
+        if (sourceKey && consumedIds.has(sourceKey)) {
+            return;
+        }
+
+        const normalizedSeat = normalizeVideoSeat(seat, existingSeats.length + index);
+
+        if (!hasVideoAnchor(normalizedSeat)) {
+            return;
+        }
+
+        const duplicatesKnownSeat = [...existingSeats, ...discoveredSeats].some(
+            (knownSeat) => videoSeatDistance(normalizedSeat, knownSeat) < VIDEO_SEAT_DISCOVERY_DISTANCE
+        );
+
+        if (duplicatesKnownSeat) {
+            return;
+        }
+
+        normalizedSeat.id = createUniqueVideoSeatId(sourceId, usedIds);
+        usedIds.add(normalizedSeat.id.toLowerCase());
+        discoveredSeats.push(normalizedSeat);
+    });
+
+    return discoveredSeats;
+}
+
+function createUniqueVideoSeatId(proposedId, usedIds) {
+    const cleanId = String(proposedId || "").trim();
+
+    if (cleanId && !usedIds.has(cleanId.toLowerCase())) {
+        return cleanId;
+    }
+
+    const highestNumber = [...usedIds].reduce((highest, id) => {
+        const match = id.match(/^t(\d+)$/i);
+        return match ? Math.max(highest, Number(match[1])) : highest;
+    }, 0);
+    let nextNumber = highestNumber + 1;
+
+    while (usedIds.has(`t${nextNumber}`)) {
+        nextNumber += 1;
+    }
+
+    return `T${nextNumber}`;
+}
+
+function videoSeatDistance(firstSeat, secondSeat) {
+    const firstX = parseCoordinate(firstSeat?.x);
+    const firstY = parseCoordinate(firstSeat?.y);
+    const secondX = parseCoordinate(secondSeat?.x);
+    const secondY = parseCoordinate(secondSeat?.y);
+
+    if ([firstX, firstY, secondX, secondY].some((value) => value === null)) {
+        return Infinity;
+    }
+
+    return Math.hypot(firstX - secondX, firstY - secondY);
 }
 
 function normalizeVideoSeat(seat, index, previousSeat = {}) {
@@ -1181,7 +1266,7 @@ function updateLiveMetrics(seats, analyzedAt = classVideo.currentTime) {
 
     occupiedMetric.textContent = `${occupiedSeats.length}/${seats.length}`;
     attentiveMetric.textContent = `${attentionPercent}%`;
-    frameMetric.textContent = String(analysisFrameCount);
+    frameMetric.textContent = String(analyzedFrames.length);
     frameTimestamp.textContent = `Frame analyzed at ${formatTime(analyzedAt)}`;
 }
 
