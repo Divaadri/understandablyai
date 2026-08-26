@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Understandably</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="ambientGlass" aria-hidden="true">
+        <div class="liquidCorner liquidCornerTop">
+            <span class="glassMass glassMassOne"></span>
+            <span class="glassMass glassMassTwo"></span>
+            <span class="glassRibbon"></span>
+            <span class="bubble bubbleLarge"></span>
+            <span class="bubble bubbleSmall"></span>
+        </div>
+        <div class="liquidCorner liquidCornerBottom">
+            <span class="glassMass glassMassOne"></span>
+            <span class="glassMass glassMassTwo"></span>
+            <span class="glassRibbon"></span>
+            <span class="bubble bubbleLarge"></span>
+            <span class="bubble bubbleSmall"></span>
+        </div>
+    </div>
+
+    <div id="splash" class="landingScreen">
+        <div class="ambientGlass landingGlass" aria-hidden="true">
+            <div class="liquidCorner liquidCornerTop">
+                <span class="glassMass glassMassOne"></span>
+                <span class="glassMass glassMassTwo"></span>
+                <span class="glassRibbon"></span>
+                <span class="bubble bubbleLarge"></span>
+                <span class="bubble bubbleSmall"></span>
+            </div>
+            <div class="liquidCorner liquidCornerBottom">
+                <span class="glassMass glassMassOne"></span>
+                <span class="glassMass glassMassTwo"></span>
+                <span class="glassRibbon"></span>
+                <span class="bubble bubbleLarge"></span>
+                <span class="bubble bubbleSmall"></span>
+            </div>
+        </div>
+
+        <div class="landingBrand">
+            <div class="logoCrop">
+                <img src="assets/logo.svg" alt="Understandably" class="splashLogo">
+            </div>
+            <div class="landingWordmark">UNDERSTANDABLY</div>
+            <div class="landingTagline">
+                <span></span>
+                <p>AI Classroom Twin</p>
+                <span></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="appFrame">
+        <header class="topbar">
+            <div class="brandMark">
+                <img src="assets/logo.svg" alt="Understandably">
+                <div class="brandCopy">
+                    <strong>Understandably</strong>
+                    <span>AI Classroom Twin</span>
+                </div>
+            </div>
+
+            <div class="navRule" aria-hidden="true" style="visibility: hidden;"></div>
+
+            <nav class="navLinks" aria-label="Main navigation">
+                <button id="homeBtn" type="button">Home</button>
+                <span class="adminStatus">
+                    <span class="statusDot"></span>
+                    Admin
+                </span>
+                <span id="currentDate">23 Aug 2026</span>
+            </nav>
+        </header>
+
+        <main>
+            <section id="homeScreen" class="homeScreen">
+                <div class="homePanel">
+                    <div class="homeHeading">
+                        <span class="sectionEyebrow">AI classroom analysis</span>
+                        <h1>See where attention lives.</h1>
+                        <p>Turn classroom footage into a live seating and attention map.</p>
+                    </div>
+
+                    <div class="analysisModes" aria-label="Analysis source">
+                        <button class="modeButton active" data-mode="video" type="button">Video</button>
+                        <button class="modeButton" data-mode="photo" type="button">Class photo</button>
+                    </div>
+
+                    <div id="videoSetup" class="setupPanel">
+                        <label id="videoDropZone" class="videoDropZone" for="videoInput">
+                            <input id="videoInput" type="file" accept="video/mp4,video/webm,video/quicktime,video/*">
+                            <span class="uploadGlyph" aria-hidden="true"></span>
+                            <strong>Drop a classroom video here</strong>
+                            <span>or choose an MP4, WebM, or MOV file</span>
+                        </label>
+
+                        <div id="videoFileSummary" class="videoFileSummary" hidden>
+                            <div>
+                                <span class="fileTypeBadge">VIDEO</span>
+                                <strong id="videoFileName">Classroom video</strong>
+                                <span id="videoFileMeta">Ready to analyze</span>
+                            </div>
+                            <button id="removeVideoBtn" type="button" aria-label="Remove selected video" title="Remove video">&times;</button>
+                        </div>
+
+                        <div class="setupFields">
+                            <div class="fieldGroup">
+                                <label for="videoClassSelect">Seat layout</label>
+                                <select id="videoClassSelect">
+                                    <option value="">Auto-detect from video</option>
+                                    <option value="class8a">Grade 8A layout</option>
+                                    <option value="class8b">Grade 8B layout</option>
+                                    <option value="class8c">Grade 8C layout</option>
+                                    <option value="class8d">Grade 8D layout</option>
+                                </select>
+                            </div>
+                            <button id="videoAnalyzeBtn" class="primaryAction" type="button" disabled>
+                                Start live analysis
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="photoSetup" class="setupPanel" hidden>
+                        <div class="fieldGroup">
+                            <label for="classSelect">Classroom</label>
+                            <select id="classSelect">
+                                <option value="">Select class</option>
+                                <option value="class8a">Grade 8A</option>
+                                <option value="class8b">Grade 8B</option>
+                                <option value="class8c">Grade 8C</option>
+                                <option value="class8d">Grade 8D</option>
+                            </select>
+                        </div>
+                        <button id="analyzeBtn" class="primaryAction" type="button">Analyze class photo</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="resultScreen" class="resultScreen" hidden>
+                <section class="classroomStage" aria-label="Classroom digital twin">
+                    <div class="analysisHeader">
+                        <div class="scoreStrip">
+                            <span id="scoreLabel">Overall</span>
+                            <strong id="overallScore">--</strong>
+                        </div>
+
+                        <div id="liveStatus" class="liveStatus ready">
+                            <span class="liveDot"></span>
+                            <strong id="liveStatusText">AI ready</strong>
+                        </div>
+                    </div>
+
+                    <div class="planShell">
+                        <img id="classImage" src="" alt="Selected classroom" class="analysisSource">
+                        <video id="classVideo" class="analysisSource" controls playsinline preload="metadata" hidden></video>
+                        <div id="overlay" aria-label="Seat markers"></div>
+                        <div id="frameNotice" class="frameNotice" hidden></div>
+                    </div>
+
+                    <canvas id="frameCanvas" hidden></canvas>
+
+                    <div id="videoAnalysisBar" class="videoAnalysisBar" hidden>
+                        <button id="toggleLiveBtn" class="liveControl" type="button">
+                            <span class="controlIcon" aria-hidden="true"></span>
+                            <span id="toggleLiveText">Pause live AI</span>
+                        </button>
+                        <span id="frameTimestamp">Waiting for first frame</span>
+                    </div>
+
+                    <div class="seatLegend" aria-label="Seat marker legend">
+                        <span><i class="legendDot attentive"></i>Attentive</span>
+                        <span><i class="legendDot partial"></i>Low attention</span>
+                        <span><i class="legendDot distracted"></i>Not attentive</span>
+                        <span><i class="legendDot empty"></i>Empty</span>
+                    </div>
+
+                    <section id="classroomMapSection" class="classroomMapSection" aria-labelledby="classroomMapTitle" hidden>
+                        <div class="classroomMapHeader">
+                            <h2 id="classroomMapTitle">Classroom map</h2>
+                            <span id="classroomMapCount">0 mapped seats</span>
+                        </div>
+                        <div id="classroomMap" class="classroomMap" aria-label="Video-generated classroom seat map">
+                            <div class="classroomFront" aria-hidden="true">
+                                <span>Front of classroom</span>
+                            </div>
+                            <div id="classroomMapSeats" class="classroomMapSeats"></div>
+                        </div>
+                    </section>
+                </section>
+
+                <aside class="insightPanel">
+                    <div id="liveMetrics" class="liveMetrics" hidden>
+                        <div class="liveMetric">
+                            <span>Occupied</span>
+                            <strong id="occupiedMetric">--</strong>
+                        </div>
+                        <div class="liveMetric">
+                            <span>Attentive</span>
+                            <strong id="attentiveMetric">--</strong>
+                        </div>
+                        <div class="liveMetric">
+                            <span>Frames</span>
+                            <strong id="frameMetric">0</strong>
+                        </div>
+                    </div>
+
+                    <div class="tabs">
+                        <button id="recommendationTab" class="tab active" type="button">
+                            Recommendation
+                        </button>
+                        <button id="bestsTab" class="tab" type="button">
+                            Bests
+                        </button>
+                        <button id="seatTab" class="tab" type="button">
+                            Seat Analysis
+                        </button>
+                        <button id="framesTab" class="tab" type="button" hidden>
+                            Frames <span id="framesTabCount" class="tabCount">0</span>
+                        </button>
+                    </div>
+
+                    <div id="recommendationPanel" class="tabContent">
+                        <div id="recommendations"></div>
+                    </div>
+
+                    <div id="bestsPanel" class="tabContent hidden">
+                        <div id="bestsInfo">Analyze a classroom to view best seats.</div>
+                    </div>
+
+                    <div id="seatPanel" class="tabContent hidden">
+                        <div id="seatInfo">Click a seat to view analytics.</div>
+                    </div>
+
+                    <div id="framesPanel" class="tabContent hidden">
+                        <div id="framesInfo" class="framesInfo">
+                            <p class="emptyFrames">No analyzed frames yet.</p>
+                        </div>
+                    </div>
+                </aside>
+            </section>
+        </main>
+    </div>
+
+    <div id="loading" hidden>
+        <div class="loaderCard">
+            <img src="assets/logo.svg" alt="Understandably" class="loaderLogo">
+            <h2 id="loadingTitle">Analyzing Classroom...</h2>
+            <p id="loadingDetail">Building the classroom twin</p>
+            <div class="loaderDots" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </div>
+
+    <script src="api.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>
